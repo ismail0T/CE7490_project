@@ -1,6 +1,7 @@
 import random
 
 import DS
+import DS_SPAR
 import Utils
 import facebook, twitter
 import networkx as nx
@@ -52,7 +53,7 @@ import nxmetis
 
 
 
-network = nx.DiGraph()
+# network = nx.DiGraph()
 # attrs = {1: {"label": "A", "write": 10, "server": 1},
 #          2: {"label": "B", "write": 20, "server": 1},
 #          3: {"label": "C", "write": 30, "server": 1},
@@ -60,23 +61,53 @@ network = nx.DiGraph()
 
 # nx.set_node_attributes(network, attrs)
 
-network.add_node(1, label="A", copy_of=-1, write=10, server=0)
-network.add_node(2, label="B", copy_of=-1, write=20, server=0)
-network.add_node(3, label="C", copy_of=-1, write=30, server=0)
-network.add_node(4, label="D", copy_of=-1, write=80, server=0)
-
-# print("NB nodes: ", network.order())
+# network.add_node(1, label="A", copy_of=-1, write=10, server=0)
+# network.add_node(2, label="B", copy_of=-1, write=20, server=0)
+# network.add_node(3, label="C", copy_of=-1, write=30, server=0)
+# network.add_node(4, label="D", copy_of=-1, write=80, server=0)
 #
-# sys.exit()
-
-network.add_weighted_edges_from([(1, 3, 90), (3, 1, 25)])
-network.add_weighted_edges_from([(1, 4, 100), (4, 1, 20)])
-network.add_weighted_edges_from([(2, 4, 5), (4, 2, 15)])
-network.add_weighted_edges_from([(3, 4, 10), (4, 3, 20)])
+# network.add_weighted_edges_from([(1, 3, 90), (3, 1, 25)])
+# network.add_weighted_edges_from([(1, 4, 100), (4, 1, 20)])
+# network.add_weighted_edges_from([(2, 4, 5), (4, 2, 15)])
+# network.add_weighted_edges_from([(3, 4, 10), (4, 3, 20)])
 
 # print(dict(network.out_degree(weight='weight')))
 
+
+network = nx.DiGraph()
+nb_servers = 3
+network.graph["load"] = np.zeros(nb_servers)
+
+DS_SPAR.add_node_spar(network, 1, label="A", copy_of=-1, write=10, server=0)
+DS_SPAR.add_node_spar(network, 2, label="B", copy_of=-1, write=20, server=0)
+DS_SPAR.add_node_spar(network, 3, label="C", copy_of=-1, write=30, server=0)
+DS_SPAR.add_node_spar(network, 4, label="D", copy_of=-1, write=80, server=0)
+DS_SPAR.add_node_spar(network, 5, label="E", copy_of=-1, write=80, server=1)
+DS_SPAR.add_node_spar(network, 6, label="F", copy_of=-1, write=80, server=2)
+
+DS_SPAR.add_node_spar(network, 10, label="D", copy_of=5, write=80, server=0)
+DS_SPAR.add_node_spar(network, 11, label="D", copy_of=1, write=80, server=1)
+DS_SPAR.add_node_spar(network, 12, label="D", copy_of=6, write=80, server=1)
+DS_SPAR.add_node_spar(network, 13, label="D", copy_of=5, write=80, server=2)
+
+network.add_weighted_edges_from([(1, 2, 90)])
+network.add_weighted_edges_from([(1, 3, 90)])
+network.add_weighted_edges_from([(1, 4, 90)])
+network.add_weighted_edges_from([(1, 5, 90)])
+network.add_weighted_edges_from([(5, 6, 90)])
+
+
+
 G = Utils.to_undirected(network)
+
+
+# for n, nbrs in G.adj.items():
+#    for nbr, eattr in nbrs.items():
+#        wt = eattr['weight']
+#        print(f"({n}, {nbr}, {wt:.3})")
+
+# print(5, [x for x in G.neighbors(5)])
+# print(6, [x for x in G.neighbors(6)])
 
 # for (u, v, wt) in G.edges.data('weight'):
 #     print(u, v, wt)
@@ -85,9 +116,18 @@ G = Utils.to_undirected(network)
 #     print(key, H.nodes[key])
 # print(1, network.nodes[1])
 
-DS.spar(network)
-Utils.total_read(network)
-Utils.total_write(network)
+print(G.graph)
+
+
+DS_SPAR.add_edge_spar(G, 1, 6, 10)
+# for key in list(G.nodes):
+#     print(key, G.nodes[key])
+
+
+print(G.graph)
+
+# Utils.total_read(network)
+# Utils.total_write(network)
 
 
 
