@@ -9,7 +9,10 @@ def get_nb_replicas(G, key):
 
 
 def get_largest_ID(G):
-    return max(x for x in G.nodes)
+    max_in_original_dataset = 5000
+    l = list(x for x in G.nodes)
+    l.append(max_in_original_dataset)
+    return max(l) if l else 0
 
 
 def to_undirected(G):
@@ -30,8 +33,11 @@ def has_local_replica(G, u, v):
     if server_u == server_v:
         return True
     for key in list(G.nodes):
-        if G.nodes[key]["copy_of"] == v and G.nodes[key]["server"] == server_u:
+        if G.nodes[key]["copy_of"] == u and G.nodes[key]["server"] == server_v:
             return True
+    # print("no replica found for", u, "on", v)
+    # print("server_u", server_u, "server_v", server_v)
+
     return False
 
 

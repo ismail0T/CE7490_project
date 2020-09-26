@@ -46,10 +46,11 @@ def spar(G_orig, nb_partition_max=2, k_min=2):
 def get_low_replica(G, nb_partition_max):
     counts = np.zeros(nb_partition_max)
     for key in list(G.nodes):
-        if G.nodes[key]["server"] != -1:  # only master replicas
+        if G.nodes[key]["copy_of"] == -1:  # only master replicas
             counts[G.nodes[key]["server"]] += 1
-
-    return np.argmin(counts)
+    low = np.argmin(counts)
+    # print(counts, low)
+    return low
 
 
 # def add_node_spar(G, id_new, label, write, copy_of, server):
@@ -58,7 +59,9 @@ def get_low_replica(G, nb_partition_max):
 #     return id_new
 
 
-def add_edge_spar(G, u, v, weight, K_min=2):
+def add_edge_spar(G, u, v, weight):
+    k_min = G.graph["k_min"]
+
     # G.add_weighted_edges_from([(u, v, weight)])
     # check if: bother masters are on the same partition OR u has a replica on v's partition OR v has a replica on u's partition
     if G.nodes[u]["server"] != G.nodes[v]["server"]:
@@ -98,10 +101,11 @@ def add_edge_spar(G, u, v, weight, K_min=2):
                         to_delete = False
                 # check if there will still at least k replica for this node
                 if to_delete:
-                    to_delete = Utils.get_nb_replicas(G, neighbour_id_outside) > K_min
+                    to_delete = Utils.get_nb_replicas(G, neighbour_id_outside) > k_min
                 if to_delete:
                     tmp = list(x for x in G.nodes if G.nodes[x]["copy_of"] == neighbour_id_outside and G.nodes[x]["server"] == G.nodes[u]["server"])
-                    u_neighbours_replica_to_delete.append(tmp[0])
+                    if len(tmp) > 0:
+                        u_neighbours_replica_to_delete.append(tmp[0])
 
             # print("u_neighbours_inside", u_neighbours_inside)
             # print("u_neighbours_outside", u_neighbours_outside)
@@ -109,12 +113,8 @@ def add_edge_spar(G, u, v, weight, K_min=2):
             # print("u_neighbours_replica_to_delete", u_neighbours_replica_to_delete)
 
             for key in G.nodes:
-                if G.nodes[key]["copy_of"] in u_neighbours_inside and G.nodes[key]["server"] == G.nodes[v]["server"] and G.nodes[key]["copy_of"] in u_neighbours_inside:
+                if G.nodes[key]["copy_of"] in u_neighbours_inside and G.nodes[key]["server"] == G.nodes[v]["server"]:
                     u_neighbours_to_replicate.remove(G.nodes[key]["copy_of"])
-
-            for neighbour_id in u_neighbours_to_replicate:
-                id_new = Utils.get_largest_ID(G) + 1
-                # add_node_spar(G, id_new, label=G.nodes[neighbour_id]["label"], write=0, copy_of=neighbour_id, server=G.nodes[v]["server"])
 
             cost_config_2 = len(u_neighbours_to_replicate) - len(u_neighbours_replica_to_delete) + len(slave_replica) + (len(u_neighbours_inside)>0)  # the last term is for u to replicate itself on its old partition
 
@@ -135,10 +135,11 @@ def add_edge_spar(G, u, v, weight, K_min=2):
                         to_delete = False
                 # check if there will still at least k replica for this node
                 if to_delete:
-                    to_delete = Utils.get_nb_replicas(G, neighbour_id_outside) > K_min
+                    to_delete = Utils.get_nb_replicas(G, neighbour_id_outside) > k_min
                 if to_delete:
                     tmp = list(x for x in G.nodes if G.nodes[x]["copy_of"] == neighbour_id_outside and G.nodes[x]["server"] == G.nodes[v]["server"])
-                    v_neighbours_replica_to_delete.append(tmp[0])
+                    if len(tmp)>0:
+                        v_neighbours_replica_to_delete.append(tmp[0])
 
             # print("\nv_neighbours_inside", v_neighbours_inside)
             # print("v_neighbours_outside", v_neighbours_outside)
@@ -146,12 +147,8 @@ def add_edge_spar(G, u, v, weight, K_min=2):
             # print("v_neighbours_replica_to_delete", v_neighbours_replica_to_delete)
 
             for key in G.nodes:
-                if G.nodes[key]["copy_of"] in v_neighbours_inside and G.nodes[key]["server"] == G.nodes[u]["server"] and G.nodes[key]["copy_of"] in v_neighbours_inside:
+                if G.nodes[key]["copy_of"] in v_neighbours_inside and G.nodes[key]["server"] == G.nodes[u]["server"]:
                     v_neighbours_to_replicate.remove(G.nodes[key]["copy_of"])
-
-            for neighbour_id in v_neighbours_to_replicate:
-                id_new = Utils.get_largest_ID(G) + 1
-                # add_node_spar(G, id_new, label=G.nodes[neighbour_id]["label"], write=0, copy_of=neighbour_id, server=G.nodes[u]["server"])
 
             cost_config_3 = len(v_neighbours_to_replicate) - len(v_neighbours_replica_to_delete) + len(slave_replica) + (len(v_neighbours_inside)>0)  # the last term is for v to replicate itself on its old partition
 
@@ -175,12 +172,15 @@ def add_edge_spar(G, u, v, weight, K_min=2):
             # print("expected_new_load 3", expected_new_load_config3, ratio_load_config3)
 
             do_config = Utils.choose_best_config(cost_config_1, cost_config_2, cost_config_3, ratio_load_config1, ratio_load_config2, ratio_load_config3)
+            # print("do_config", do_config, "(u=", u, ", v=", v,")")
             if do_config == 0:
                 G.add_weighted_edges_from([(u, v, weight)])
                 if do_replica_for[0]:  # create replica for u on v's partition
+                    # print("create replica for u on v's partition")
                     id_new = Utils.get_largest_ID(G) + 1
                     add_node_spar(G, id_new, label=G.nodes[u]["label"], write=0, copy_of=u, server=G.nodes[v]["server"])
                 if do_replica_for[1]:  # create replica for v on u's partition
+                    # print("create replica for v on u's partition")
                     id_new = Utils.get_largest_ID(G) + 1
                     add_node_spar(G, id_new, label=G.nodes[v]["label"], write=0, copy_of=v, server=G.nodes[u]["server"])
 
@@ -229,8 +229,30 @@ def add_edge_spar(G, u, v, weight, K_min=2):
 
 
 def add_node_spar(G, id_new, label, copy_of, write, server):
-    G.add_node(id_new, label=label, copy_of=copy_of, write=write, server=server)
-    if copy_of==-1:
-        G.graph["load"][server] += 1
+    if server == -1:
+        # 1. find best partition and create
+        nb_partition_max = G.graph["nb_partition_max"]
+        id_partition = get_low_replica(G, nb_partition_max)
+        G.add_node(id_new, label=label, copy_of=copy_of, write=write, server=id_partition)
+        if copy_of == -1:
+            G.graph["load"][id_partition] += 1
 
+        # 2. replicate k times
+        k_min = G.graph["k_min"]
+        partions_to_replicate_on = list(range(nb_partition_max))
+        partions_to_replicate_on.remove(id_partition)
+        # if id_new == 10:
+        #     print("partions_to_replicate_on", partions_to_replicate_on)
+        np.random.shuffle(partions_to_replicate_on)
+        for i in range(np.random.randint(k_min, len(partions_to_replicate_on))):  # this should be modified: rand instead of min
+            id_new_slave = Utils.get_largest_ID(G) + 1
+            add_node_spar(G, id_new_slave, label=G.nodes[id_new]["label"], write=0, copy_of=id_new,
+                          server=partions_to_replicate_on[i])
+
+    else:
+        G.add_node(id_new, label=label, copy_of=copy_of, write=write, server=server)
+        if copy_of == -1:
+            G.graph["load"][server] += 1
+
+    return id_new
 

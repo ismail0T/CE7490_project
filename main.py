@@ -75,37 +75,45 @@ import nxmetis
 
 
 network = nx.DiGraph()
-nb_partition_max = 10
+nb_partition_max = 3
 network.graph["load"] = np.zeros(nb_partition_max)
 network.graph["nb_partition_max"] = nb_partition_max
-network.graph["k_min"] = 2
+network.graph["k_min"] = 1
 
 G = Utils.to_undirected(network)
 
 print(G.graph["load"])
 
-pathhack = "/home/ismail/Dev/Ego_Facebook"
 
-G_fb = nx.read_edgelist("%s/facebook_combined.txt" % (pathhack,), create_using = nx.Graph(), nodetype=int)
+id_A = DS_SPAR.add_node_spar(G, Utils.get_largest_ID(G) + 1, label="A", copy_of=-1, write=10, server=-1)
+id_B = DS_SPAR.add_node_spar(G, Utils.get_largest_ID(G) + 1, label="B", copy_of=-1, write=20, server=-1)
+DS_SPAR.add_edge_spar(G, id_A, id_B, 10)
+id_C = DS_SPAR.add_node_spar(G, Utils.get_largest_ID(G) + 1, label="C", copy_of=-1, write=30, server=-1)
+DS_SPAR.add_edge_spar(G, id_A, id_C, 10)
+id_D = DS_SPAR.add_node_spar(G, Utils.get_largest_ID(G) + 1, label="D", copy_of=-1, write=80, server=-1)
+DS_SPAR.add_edge_spar(G, id_A, id_D, 10)
+id_E = DS_SPAR.add_node_spar(G, Utils.get_largest_ID(G) + 1, label="E", copy_of=-1, write=80, server=-1)
+DS_SPAR.add_edge_spar(G, id_A, id_E, 10)
+id_F = DS_SPAR.add_node_spar(G, Utils.get_largest_ID(G) + 1, label="F", copy_of=-1, write=80, server=-1)
 
-i=0
-for (u, v) in G_fb.edges:
-    if not G.has_node(u):
-        id_u = DS_SPAR.add_node_spar(G, u, label="A", copy_of=-1, write=10, server=-1)
-    if not G.has_node(v):
-        id_v = DS_SPAR.add_node_spar(G, v, label="A", copy_of=-1, write=10, server=-1)
+DS_SPAR.add_edge_spar(G, id_E, id_F, 10)
+DS_SPAR.add_edge_spar(G, id_A, id_F, 10)
 
-    DS_SPAR.add_edge_spar(G, u, v, 20)
-    print(i)
-    i += 1
-    if i >= 4000:
-        break
-print("ORDER", G.order())
-# print(Utils.get_largest_ID(G_fb))
+# DS_SPAR.add_node_spar(G, 10, label="D", copy_of=5, write=80, server=-1)
+# DS_SPAR.add_node_spar(G, 11, label="D", copy_of=1, write=80, server=-1)
+# DS_SPAR.add_node_spar(G, 12, label="D", copy_of=6, write=80, server=-1)
+# DS_SPAR.add_node_spar(G, 13, label="D", copy_of=5, write=80, server=-1)
+
+# G.add_weighted_edges_from([(1, 2, 90)])
+# G.add_weighted_edges_from([(1, 3, 90)])
+# G.add_weighted_edges_from([(1, 4, 90)])
+# G.add_weighted_edges_from([(1, 5, 90)])
+# G.add_weighted_edges_from([(5, 6, 90)])
+
 
 # DS_SPAR.add_edge_spar(G, 1, 6, 10)
-# for key in list(G.nodes):
-#     print(key, G.nodes[key])
+for key in list(G.nodes):
+    print(key, G.nodes[key])
 
 
 print(G.graph["load"])
