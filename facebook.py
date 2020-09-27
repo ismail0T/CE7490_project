@@ -151,27 +151,29 @@ def universal_feature(feature_index):
 
 
 if __name__ == '__main__':
-    print("Running tests.")
-    print("Loading network...")
-    load_network()
-    print("done.")
+    print(os.environ['PATH'])
 
-    failures = 0
-
-
-    def test(actual, expected, test_name):
-        global failures  # lol python scope
-        try:
-            print("testing %s..." % (test_name,))
-            assert actual == expected, "%s failed (%s != %s)!" % (test_name, actual, expected)
-            print("%s passed (%s == %s)." % (test_name, actual, expected))
-        except AssertionError as e:
-            print(e)
-            failures += 1
-
-
-    test(network.order(), 4039, "order")
-    test(network.size(), 88234, "size")
-    test(round(nx.average_clustering(network), 4), 0.6055, "clustering")
-    print("%d tests failed." % (failures,))
+    # print("Running tests.")
+    # print("Loading network...")
+    # load_network()
+    # print("done.")
+    #
+    # failures = 0
+    #
+    #
+    # def test(actual, expected, test_name):
+    #     global failures  # lol python scope
+    #     try:
+    #         print("testing %s..." % (test_name,))
+    #         assert actual == expected, "%s failed (%s != %s)!" % (test_name, actual, expected)
+    #         print("%s passed (%s == %s)." % (test_name, actual, expected))
+    #     except AssertionError as e:
+    #         print(e)
+    #         failures += 1
+    #
+    #
+    # test(network.order(), 4039, "order")
+    # test(network.size(), 88234, "size")
+    # test(round(nx.average_clustering(network), 4), 0.6055, "clustering")
+    # print("%d tests failed." % (failures,))
 

@@ -6,7 +6,7 @@ import Utils
 import facebook, twitter
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from collections import defaultdict
 import sys
 
@@ -26,7 +26,7 @@ import sys
 # # look at the features of the whole network
 # print("matrix", facebook.feature_matrix())
 
-import nxmetis
+# import nxmetis
 
 
 
