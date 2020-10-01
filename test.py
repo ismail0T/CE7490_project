@@ -59,8 +59,7 @@ vwgt = [int(G.nodes[key]["write"]) for key in G.nodes]
 
 def graph_to_adj_std(G):
     res = list()
-    xadj = list()
-    xadj.append(0)
+    xadj = list([0])
     adjncy = list()
     adjwgt = list()
 
@@ -78,10 +77,10 @@ def graph_to_adj_std(G):
     return xadj, adjncy, adjwgt
 
 
-xadj, adjncy, adjwgt = graph_to_adj_std(G)
+xadj_0, adjncy_0, adjwgt = graph_to_adj_std(G)
 
-print("xadj", xadj)
-print("adjncy", len(adjncy), adjncy)
+print("xadj", xadj_0)
+print("adjncy", len(adjncy_0), adjncy_0)
 
 # np.random.seed(0)
 match = -(np.ones(G.order(), dtype=np.int))
@@ -90,11 +89,11 @@ cmap = -(np.ones(G.order(), dtype=np.int))
 vertices = list(range(G.order()))
 
 # np.random.shuffle(vertices)
-print("vertices", vertices)
+# print("vertices", vertices)
 
 for i in vertices:
     if match[i] == -1:
-        neighbors = adjncy[xadj[i]:xadj[i+1]]
+        neighbors = adjncy_0[xadj_0[i]:xadj_0[i+1]]
         for j in neighbors:
             if match[j] == -1:
                 match[i] = j
@@ -102,11 +101,10 @@ for i in vertices:
                 break
         if match[i] == -1:
             match[i] = i
-
-k=0
+k = 0
 for i in vertices:
     if cmap[i] == -1:
-        neighbors = adjncy[xadj[i]:xadj[i+1]]
+        neighbors = adjncy_0[xadj_0[i]:xadj_0[i+1]]
         for j in neighbors:
             if cmap[j] == -1:
                 cmap[i] = k
@@ -116,28 +114,103 @@ for i in vertices:
         if cmap[i] == -1:
             cmap[i] = k
             k += 1
-print("match", match)
+print("\nmatch", match)
 print("cmap", cmap)
 
+xadj_1 = list(np.zeros(max(cmap)+2, dtype=np.int))
+adjncy_1 = list()
+adjwgt_1 = list()
+
+
+def get_pairs(cmap, i):
+    return list(np.argwhere(cmap == i).reshape(-1))
+
+
+for i in range(0, max(cmap)+1):
+    pairs = get_pairs(cmap, i)
+    pair_1 = pairs[0]
+    pair_2 = -1
+    pair_2_neighbors = list()
+    pair_1_neighbors = adjncy_0[xadj_0[pair_1]:xadj_0[pair_1+1]]
+    # print(pair_1, pair_1_neighbors)
+
+    if len(pairs) < 2: # only one element
+        for n1 in pair_1_neighbors:
+            adjncy_1.insert(xadj_1[i + 1], cmap[n1])
+            for tt in range(i + 1, len(xadj_1)):
+                xadj_1[tt] += 1
+    else:
+        pair_2 = pairs[1]
+        pair_2_neighbors = adjncy_0[xadj_0[pair_2]:xadj_0[pair_2 + 1]]
+        pair_2_neighbors.remove(pair_1)
+        pair_1_neighbors.remove(pair_2)
+        # # 1. Shared neighbors
+        # shared_neighbors = list(set(pair_1_neighbors).intersection(pair_2_neighbors))
+        #
+        # # 2. non shared neighbors
+        # pair_1_neighbors = [x for x in pair_1_neighbors if x not in shared_neighbors]
+        # pair_2_neighbors = [x for x in pair_2_neighbors if x not in shared_neighbors]
+
+        for n1 in pair_1_neighbors:
+            n1_new_pair_id = cmap[n1]
+            for n2 in pair_2_neighbors:
+                n2_new_pair_id = cmap[n2]
+                curr_i_neighbors = adjncy_1[xadj_1[i]:xadj_1[i + 1]]
+
+                if n1_new_pair_id == n2_new_pair_id:
+                    if cmap[n1] not in curr_i_neighbors:
+                        if i == 0:
+                            print(i, n1, n2, "inserting_A",  cmap[n1], "at", xadj_1[i + 1])
+
+                        # create edge between i and cmap[n1}
+                        adjncy_1.insert(xadj_1[i + 1], cmap[n1])
+                        for tt in range(i + 1, len(xadj_1)):
+                            xadj_1[tt] += 1
+
+                        # sum edges weights (pair_1, n1) & (pair_2, n2)
+
+        for n1 in pair_1_neighbors:
+            n1_new_pair_id = cmap[n1]
+            for n2 in pair_2_neighbors:
+                n2_new_pair_id = cmap[n2]
+                curr_i_neighbors = adjncy_1[xadj_1[i]:xadj_1[i + 1]]
+
+                if n1_new_pair_id != n2_new_pair_id:
+                    if cmap[n1] not in curr_i_neighbors:
+                        if i == 0:
+                            print(i, n1, n2, "inserting_B", cmap[n1], "at", xadj_1[i + 1])
+                            print("curr_i_neighbors", curr_i_neighbors)
+                            print("xadj", xadj_1)
+                        # create edge between i and cmap[n1}
+                        adjncy_1.insert(xadj_1[i + 1], cmap[n1])
+                        for tt in range(i + 1, len(xadj_1)):
+                            xadj_1[tt] += 1
+                    if cmap[n2] not in curr_i_neighbors:
+                        if i == 0:
+                            print(i, n2, "inserting_C", cmap[n1], "at", xadj_1[i + 1])
+
+                        # create edge between i and cmap[n2}
+                        adjncy_1.insert(xadj_1[i + 1], cmap[n2])
+                        for tt in range(i + 1, len(xadj_1)):
+                            xadj_1[tt] += 1
+
+
+# x = (np.argwhere(cmap == 1)).reshape(-1)
+# print(x.tolist())
+# print(list(np.where(cmap == 1)))
+
+print(xadj_1)
+print(adjncy_1)
 # print(len(adjwgt), adjwgt)
 # # print(vwgt)
-#
-# n_cuts, membership = pymetis.part_graph(2, xadj=xadj, adjncy=adjncy, eweights=adjwgt, vweights=vwgt)
-# print(n_cuts)
-# print(membership)
-#
-# print("kkk")
 
-# k=0
-# for i in vertices:
-#     if match[i] == -1:
-#         neighbors = adjncy[xadj[i]:xadj[i+1]]
-#         for j in neighbors:
-#             if match[j] == -1:
-#                 match[i] = k
-#                 match[j] = k
-#                 k += 1
-#                 break
-#         if match[i] == -1:
-#             match[i] = k
-#             k += 1
+
+
+
+
+
+
+
+
+
+
