@@ -30,6 +30,20 @@ network.add_weighted_edges_from([(5, 8, 2)])
 network.add_weighted_edges_from([(6, 7, 2)])
 network.add_weighted_edges_from([(7, 8, 2)])
 
+# network.add_weighted_edges_from([(0, 1, 2)])
+# network.add_weighted_edges_from([(0, 3, 2)])
+# network.add_weighted_edges_from([(1, 2, 5)])
+# network.add_weighted_edges_from([(1, 3, 7)])
+# network.add_weighted_edges_from([(1, 4, 3)])
+# network.add_weighted_edges_from([(2, 4, 2)])
+# network.add_weighted_edges_from([(2, 5, 2)])
+# network.add_weighted_edges_from([(3, 6, 2)])
+# network.add_weighted_edges_from([(4, 5, 2)])
+# network.add_weighted_edges_from([(4, 7, 20)])
+# network.add_weighted_edges_from([(5, 8, 2)])
+# network.add_weighted_edges_from([(6, 7, 2)])
+# network.add_weighted_edges_from([(7, 8, 2)])
+
 
 
 # network.add_weighted_edges_from([(0, 1, 20), (1, 0, 25)])
@@ -58,7 +72,6 @@ vwgt = [int(G.nodes[key]["write"]) for key in G.nodes]
 
 
 def graph_to_adj_std(G):
-    res = list()
     xadj = list([0])
     adjncy = list()
     adjwgt = list()
@@ -77,11 +90,11 @@ def graph_to_adj_std(G):
     return xadj, adjncy, adjwgt
 
 
-xadj_0, adjncy_0, adjwgt = graph_to_adj_std(G)
+xadj_0, adjncy_0, weight_0 = graph_to_adj_std(G)
 
-print("xadj", xadj_0)
-print("adjncy", len(adjncy_0), adjncy_0)
-
+print("xadj_0", xadj_0)
+print("adjncy_0", len(adjncy_0), adjncy_0)
+print("adjwgt_0", weight_0)
 # np.random.seed(0)
 match = -(np.ones(G.order(), dtype=np.int))
 cmap = -(np.ones(G.order(), dtype=np.int))
@@ -119,88 +132,115 @@ print("cmap", cmap)
 
 xadj_1 = list(np.zeros(max(cmap)+2, dtype=np.int))
 adjncy_1 = list()
-adjwgt_1 = list()
+weight_1 = list()
 
 
-def get_pairs(cmap, i):
-    return list(np.argwhere(cmap == i).reshape(-1))
+# def get_pairs(cmap, i):
+#     return list(np.argwhere(cmap == i).reshape(-1))
 
+new_Vs = list(range(0, max(cmap)+1))
 
-for i in range(0, max(cmap)+1):
-    pairs = get_pairs(cmap, i)
-    pair_1 = pairs[0]
-    pair_2 = -1
-    pair_2_neighbors = list()
-    pair_1_neighbors = adjncy_0[xadj_0[pair_1]:xadj_0[pair_1+1]]
-    # print(pair_1, pair_1_neighbors)
+for k, i in enumerate(new_Vs):
+    pairs_i = list(np.argwhere(cmap == i).reshape(-1))
+    pair_i_1 = pairs_i[0]
+    pair_i_2 = -1
+    pair_i_2_neighbors = list()
+    pair_i_1_neighbors = adjncy_0[xadj_0[pair_i_1]:xadj_0[pair_i_1 + 1]]
+    if len(pairs_i) < 2:  # only one element
+        for j in new_Vs:
+            pairs_j = list(np.argwhere(cmap == j).reshape(-1))
+            pair_j_1 = pairs_j[0]
+            pair_j_2 = -1
+            pair_j_2_neighbors = list()
+            pair_j_1_neighbors = adjncy_0[xadj_0[pair_j_1]:xadj_0[pair_j_1 + 1]]
+            edges_to_collapse = list()
+            if len(pairs_j) < 2:  # only one element
+                pass
+            else:
+                pair_j_2 = pairs_j[1]
+                pair_j_2_neighbors = adjncy_0[xadj_0[pair_j_2]:xadj_0[pair_j_2 + 1]]
+                pair_j_2_neighbors.remove(pair_j_1)
+                pair_j_1_neighbors.remove(pair_j_2)
 
-    if len(pairs) < 2: # only one element
-        for n1 in pair_1_neighbors:
-            adjncy_1.insert(xadj_1[i + 1], cmap[n1])
-            for tt in range(i + 1, len(xadj_1)):
-                xadj_1[tt] += 1
+                if pair_i_1 in pair_j_1_neighbors:
+                    edges_to_collapse.append((pair_i_1, pair_j_1))
+                if pair_i_1 in pair_j_2_neighbors:
+                    edges_to_collapse.append((pair_i_1, pair_j_2))
+
+            if len(edges_to_collapse) > 0:
+                wt_total = 0
+                for edge in edges_to_collapse:
+                    u = edge[0]
+                    v = edge[1]
+                    l_wt1 = list(xadj_0[u] + np.argwhere(
+                        np.asarray(adjncy_0)[xadj_0[u]:xadj_0[u + 1]] == v).reshape(-1))
+                    wt_total += weight_0[l_wt1[0]]
+
+                adjncy_1.insert(xadj_1[i + 1], j)
+                weight_1.insert(xadj_1[i + 1], wt_total)
+                for tt in range(i + 1, len(xadj_1)):
+                    xadj_1[tt] += 1
     else:
-        pair_2 = pairs[1]
-        pair_2_neighbors = adjncy_0[xadj_0[pair_2]:xadj_0[pair_2 + 1]]
-        pair_2_neighbors.remove(pair_1)
-        pair_1_neighbors.remove(pair_2)
-        # # 1. Shared neighbors
-        # shared_neighbors = list(set(pair_1_neighbors).intersection(pair_2_neighbors))
-        #
-        # # 2. non shared neighbors
-        # pair_1_neighbors = [x for x in pair_1_neighbors if x not in shared_neighbors]
-        # pair_2_neighbors = [x for x in pair_2_neighbors if x not in shared_neighbors]
+        pair_i_2 = pairs_i[1]
+        pair_i_2_neighbors = adjncy_0[xadj_0[pair_i_2]:xadj_0[pair_i_2 + 1]]
+        pair_i_2_neighbors.remove(pair_i_1)
+        pair_i_1_neighbors.remove(pair_i_2)
 
-        for n1 in pair_1_neighbors:
-            n1_new_pair_id = cmap[n1]
-            for n2 in pair_2_neighbors:
-                n2_new_pair_id = cmap[n2]
-                curr_i_neighbors = adjncy_1[xadj_1[i]:xadj_1[i + 1]]
+        for j in new_Vs:
+            pairs_j = list(np.argwhere(cmap == j).reshape(-1))
+            pair_j_1 = pairs_j[0]
+            pair_j_2 = -1
+            pair_j_2_neighbors = list()
+            pair_j_1_neighbors = adjncy_0[xadj_0[pair_j_1]:xadj_0[pair_j_1 + 1]]
+            edges_to_collapse = list()
+            if len(pairs_j) < 2:  # only one element
 
-                if n1_new_pair_id == n2_new_pair_id:
-                    if cmap[n1] not in curr_i_neighbors:
-                        if i == 0:
-                            print(i, n1, n2, "inserting_A",  cmap[n1], "at", xadj_1[i + 1])
+                if pair_i_1 in pair_j_1_neighbors:
+                    edges_to_collapse.append((pair_i_1, pair_j_1))
+                if pair_i_2 in pair_j_1_neighbors:
+                    edges_to_collapse.append((pair_i_2, pair_j_1))
 
-                        # create edge between i and cmap[n1}
-                        adjncy_1.insert(xadj_1[i + 1], cmap[n1])
-                        for tt in range(i + 1, len(xadj_1)):
-                            xadj_1[tt] += 1
+            else:
+                pair_j_2 = pairs_j[1]
+                pair_j_2_neighbors = adjncy_0[xadj_0[pair_j_2]:xadj_0[pair_j_2 + 1]]
+                pair_j_2_neighbors.remove(pair_j_1)
+                pair_j_1_neighbors.remove(pair_j_2)
 
-                        # sum edges weights (pair_1, n1) & (pair_2, n2)
+                if pair_i_1 in pair_j_1_neighbors:
+                    edges_to_collapse.append((pair_i_1, pair_j_1))
+                if pair_i_1 in pair_j_2_neighbors:
+                    edges_to_collapse.append((pair_i_1, pair_j_2))
+                if pair_i_2 in pair_j_1_neighbors:
+                    edges_to_collapse.append((pair_i_2, pair_j_1))
+                if pair_i_2 in pair_j_2_neighbors:
+                    edges_to_collapse.append((pair_i_2, pair_j_2))
 
-        for n1 in pair_1_neighbors:
-            n1_new_pair_id = cmap[n1]
-            for n2 in pair_2_neighbors:
-                n2_new_pair_id = cmap[n2]
-                curr_i_neighbors = adjncy_1[xadj_1[i]:xadj_1[i + 1]]
+                # if i==1 and j==3:
+                    # print(i, j)
+                    # print(i, j, edges_to_collapse)
+                # print(pair_j_1_neighbors, pair_j_2_neighbors)
+            if len(edges_to_collapse) > 0:
+                wt_total = 0
+                for edge in edges_to_collapse:
+                    u = edge[0]
+                    v = edge[1]
+                    l_wt1 = list(xadj_0[u] + np.argwhere(
+                        np.asarray(adjncy_0)[xadj_0[u]:xadj_0[u + 1]] == v).reshape(-1))
+                    wt_total += weight_0[l_wt1[0]]
 
-                if n1_new_pair_id != n2_new_pair_id:
-                    if cmap[n1] not in curr_i_neighbors:
-                        if i == 0:
-                            print(i, n1, n2, "inserting_B", cmap[n1], "at", xadj_1[i + 1])
-                            print("curr_i_neighbors", curr_i_neighbors)
-                            print("xadj", xadj_1)
-                        # create edge between i and cmap[n1}
-                        adjncy_1.insert(xadj_1[i + 1], cmap[n1])
-                        for tt in range(i + 1, len(xadj_1)):
-                            xadj_1[tt] += 1
-                    if cmap[n2] not in curr_i_neighbors:
-                        if i == 0:
-                            print(i, n2, "inserting_C", cmap[n1], "at", xadj_1[i + 1])
-
-                        # create edge between i and cmap[n2}
-                        adjncy_1.insert(xadj_1[i + 1], cmap[n2])
-                        for tt in range(i + 1, len(xadj_1)):
-                            xadj_1[tt] += 1
+                adjncy_1.insert(xadj_1[i + 1], j)
+                weight_1.insert(xadj_1[i + 1], wt_total)
+                for tt in range(i + 1, len(xadj_1)):
+                    xadj_1[tt] += 1
 
 
 # x = (np.argwhere(cmap == 1)).reshape(-1)
 # print(x.tolist())
 # print(list(np.where(cmap == 1)))
 
-print(xadj_1)
-print(adjncy_1)
+print("xadj_1", xadj_1)
+print("adjncy_1", adjncy_1)
+print("adjwgt_1", weight_1)
 # print(len(adjwgt), adjwgt)
 # # print(vwgt)
 
