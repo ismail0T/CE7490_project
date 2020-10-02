@@ -96,6 +96,9 @@ print("xadj_0", xadj_0)
 print("adjncy_0", len(adjncy_0), adjncy_0)
 print("adjwgt_0", weight_0)
 # np.random.seed(0)
+
+print(G.order(), len(xadj_0)-1)
+
 match = -(np.ones(G.order(), dtype=np.int))
 cmap = -(np.ones(G.order(), dtype=np.int))
 
