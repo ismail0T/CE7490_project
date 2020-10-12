@@ -6,22 +6,6 @@ from numpy import random
 
 G = nx.read_edgelist("facebook_combined.txt", create_using=nx.Graph(), nodetype=int).to_directed()
 
-for nid in G.nodes:
-    
-    #find writeWeight for node nid
-    # Need a zipfs function
-    writeWeight = 3    
-    G.nodes [nid] ["write"] = writeWeight
-    
-    #now we proceed to assign the read weight for each neighbour
-    for neighbor_id in G.neighbors(nid):
-        #find readWeight for NID=key from NID=v
-        readWeight = 4
-        
-        #args are from NID-1 to NID-2, the weight, multiple assignments possible.
-        #FG.add_weighted_edges_from([(1, 2, 0.125), (1, 3, 0.75), (2, 4, 1.2), (3, 4, 0.375)])
-        G.add_weighted_edges_from([(nid, neighbor_id, readWeight)])
-
 #beta and alpha are parameters that fit the dataset into a Zipfs Dist.
 def computeReadWeight(rank) :
     beta = 697.4468225
@@ -66,8 +50,30 @@ for i in range (4039): #hardcoding the number of users here
     
 read_weight_nid_distribution = {}
 
-for i in range (4039):
-    # i will iterate through all NIDs
-    nid_rank = computeRank (i)
-    nid_weight= computeReadWeight(nid_rank)
-    read_weight_nid_distribution [i] = nid_weight
+#for i in range (4039):
+# i will iterate through all NIDs
+#    nid_rank = computeRank (i)
+#    nid_weight= computeReadWeight(nid_rank)
+#    read_weight_nid_distribution [i] = nid_weight
+    
+for nid in G.nodes:
+    
+    # It is impossible to find write weight based on this dataset.
+    # We need to assign write weights randomly or by a different stratergy
+    writeWeight = 3    
+    G.nodes [nid] ["write"] = writeWeight
+    
+    # First we need to compute how many friends a user(node) has
+    Neighbor_count = 0
+    for neighbor_id in G.neighbors(1):
+      Neighbor_count = Neighbor_count + 1
+    
+    #now we proceed to assign the read weight for each neighbour
+    for neighbor_id in G.neighbors(nid):
+        nid_rank = computeRank (nid)
+        nid_r_weight= computeReadWeight(nid_rank) / Neighbor_count
+                
+        #args are from NID-1 to NID-2, the weight, multiple assignments possible.
+        #FG.add_weighted_edges_from([(1, 2, 0.125), (1, 3, 0.75), (2, 4, 1.2), (3, 4, 0.375)])
+        G.add_weighted_edges_from([(nid, neighbor_id, nid_r_weight)])
+        print(nid_r_weight)   
