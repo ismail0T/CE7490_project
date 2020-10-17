@@ -2,7 +2,7 @@ import subprocess
 import numpy as np
 import networkx as nx
 import pymetis
-
+import sys
 import Utils
 from collections import defaultdict
 
@@ -45,7 +45,6 @@ network.add_weighted_edges_from([(7, 8, 2)])
 # network.add_weighted_edges_from([(7, 8, 2)])
 
 
-
 # network.add_weighted_edges_from([(0, 1, 20), (1, 0, 25)])
 # network.add_weighted_edges_from([(0, 2, 25), (2, 0, 40)])
 # network.add_weighted_edges_from([(0, 3, 20), (3, 0, 45)])
@@ -66,7 +65,18 @@ network.add_weighted_edges_from([(7, 8, 2)])
 # network.add_weighted_edges_from([(2, 7, 40), (7, 2, 20)])
 # network.add_weighted_edges_from([(3, 5, 30), (5, 3, 45)])
 
-G = network  #  Utils.to_undirected(network)
+G = network  # Utils.to_undirected(network)
+
+def cc(v):
+    v = v +1
+    return v
+
+v = 5
+print(v)
+g = cc(v)
+print(v, g)
+
+sys.exit()
 
 vwgt = [int(G.nodes[key]["write"]) for key in G.nodes]
 

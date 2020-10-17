@@ -75,6 +75,7 @@ def coarse_one(xadj_0, adjncy_0, weight_0):
     new_Vs = list(range(0, max(cmap) + 1))
 
     for k, i in enumerate(new_Vs):
+        # print(k)
         pairs_i = list(np.argwhere(cmap == i).reshape(-1))
         pair_i_1 = pairs_i[0]
         pair_i_1_neighbors = adjncy_0[xadj_0[pair_i_1]:xadj_0[pair_i_1 + 1]]
@@ -127,7 +128,6 @@ def coarse_one(xadj_0, adjncy_0, weight_0):
                         edges_to_collapse.append((pair_i_1, pair_j_1))
                     if pair_i_2 in pair_j_1_neighbors:
                         edges_to_collapse.append((pair_i_2, pair_j_1))
-
                 else:
                     pair_j_2 = pairs_j[1]
                     pair_j_2_neighbors = adjncy_0[xadj_0[pair_j_2]:xadj_0[pair_j_2 + 1]]

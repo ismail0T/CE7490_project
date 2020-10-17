@@ -27,15 +27,20 @@ network.add_weighted_edges_from([(6, 7, 2)])
 network.add_weighted_edges_from([(7, 8, 2)])
 
 G = network  # Utils.to_undirected(network)
+
+# pathhack = "/home/ismail/Dev/Ego_Facebook"
+# G = nx.read_edgelist("%s/facebook_combined.txt" % (pathhack,), create_using=nx.Graph(), nodetype=int)
+
+
 coarse_max = 2
 xadj, adjncy, weight, match, cmap = Coarse.coarse(G, coarse_max)
 nb_new_Vs = len(cmap[-1])
 
-print("match", match)
-print("cmap", cmap)
-print("xadj", xadj)
-print("adjncy", adjncy)
-print("adjwgt", weight)
+# print("match", match)
+# print("cmap", cmap)
+# print("xadj", xadj)
+# print("adjncy", adjncy)
+# print("adjwgt", weight)
 print("nb_new_Vs=", nb_new_Vs)
 
 

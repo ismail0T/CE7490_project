@@ -6,18 +6,6 @@ import numpy as np
 from collections import defaultdict
 
 
-def nx_to_dict(G):
-    m_dict = defaultdict(lambda: {})
-    i = 0
-    for n, nbrs in G.adj.items():
-        m_dict[n]["write"] = G.nodes[n]["write"]
-        dict_nebr = defaultdict()
-        for nbr, eattr in nbrs.items():
-            wt = eattr['weight']
-            dict_nebr[nbr] = wt
-        m_dict[n]["neighbors"] = dict_nebr
-        i += 1
-    return m_dict
 
 
 def generate_read_write(size):
@@ -210,25 +198,47 @@ def add_edge_spar(u, v, wt):
                 load[u_orign_partition] += 1
 
 
+
+
+
 pathhack = "/home/ismail/Dev/Ego_Facebook"
 G_0 = nx.read_edgelist("%s/facebook_combined.txt" % (pathhack,), create_using=nx.Graph(), nodetype=int).to_directed()
-
-r, w = generate_read_write(G_0.order())
-add_weights(G_0, r, w)
+G_0 = Utils.add_weights(G_0)
 G_0 = Utils.to_undirected(G_0)
 
-G_dict = nx_to_dict(G_0)
+# network = nx.DiGraph()
+# network.add_node(0, write="20")
+# network.add_node(1, write="40")
+# network.add_node(2, write="25")
+# network.add_node(3, write="30")
+# network.add_node(4, write="60")
+# network.add_node(5, write="35")
+# network.add_node(6, write="40")
+#
+# network.add_weighted_edges_from([(0, 1, 20), (1, 0, 25)])
+# network.add_weighted_edges_from([(0, 2, 25), (2, 0, 40)])
+# network.add_weighted_edges_from([(0, 3, 20), (3, 0, 45)])
+# network.add_weighted_edges_from([(0, 5, 30), (5, 0, 50)])
+# network.add_weighted_edges_from([(3, 2, 50), (2, 3, 20)])
+# network.add_weighted_edges_from([(5, 1, 30), (1, 5, 25)])
+# network.add_weighted_edges_from([(1, 2, 30), (2, 1, 10)])
+# network.add_weighted_edges_from([(1, 6, 40), (6, 1, 20)])
+# network.add_weighted_edges_from([(2, 4, 30), (4, 2, 45)])
+#
+# G_0 = Utils.to_undirected(network)
+
+G_dict = Utils.nx_to_dict(G_0)
 G_servers = defaultdict(lambda: -1)
 G_replica = defaultdict(list)
 
-nb_partition_max = 16
+nb_partition_max = 4
 k_min = 2
 load = np.zeros(nb_partition_max)
 
 
 def SPAR():
     for u in G_dict:
-        print(u)
+        print(u/len(G_dict))
         if G_servers[u] == -1:  # no server assigned yet
             add_node_spar(u)
 
@@ -240,7 +250,19 @@ def SPAR():
 
 
 SPAR()
+cost_spar_replica = Utils.spar_inter_server_cost(G_replica)
+cost_spar_traffic = Utils.spar_inter_server_traffic(G_dict, G_servers, G_replica)
 print(len(G_dict), len(G_replica))
+# print(G_dict)
+# print(G_servers)
+# print(G_replica)
+
+print("cost_spar_replica=", cost_spar_replica)
+print("cost_spar_traffic=", cost_spar_traffic)
+
+
+
+
 # print(G_dict[1]["neighbors"])
 # for k in G_dict[1]["neighbors"]:
 #     print(G_dict[1]["neighbors"][k])

@@ -59,9 +59,9 @@ def total_write(G):
     return total
 
 
-def add_node_std(G, label, copy_of, server):
-    id_new = G.order() + 1
-    G.add_node(id_new, label=label, copy_of=copy_of, write=0, server=server)
+def add_node_std(G, copy_of, server):
+    id_new = get_largest_ID(G)+ 1
+    G.add_node(id_new, copy_of=copy_of, write=0, server=server)
 
     return id_new
 
@@ -89,4 +89,106 @@ def choose_best_config(cost_config_1, cost_config_2, cost_config_3, ratio_load_c
                     return 2
                 else:
                     return 0
+
+
+def computeReadWeight(rank):
+    beta = 697.4468225
+    alpha = -0.71569687
+    read_weight_nid = beta * (rank ** alpha)
+    return read_weight_nid
+
+
+def add_weights(G):
+    NeighbourCount = {}
+
+    for nid in G.nodes:
+        if nid not in NeighbourCount.keys():
+            NeighbourCount[nid] = 0
+        for neighbor_id in G.neighbors(nid):
+            NeighbourCount[nid] = NeighbourCount[nid] + 1
+
+    NeighbourCount_Sorted = sorted(NeighbourCount.items(), key=lambda NeighbourCount: NeighbourCount[1], reverse=True)
+
+    # Adjacent users can have same number of friends
+    # Hence multiple users can have same rank
+    rank_nid_distribution = {}  # should integrate NID, RANK
+    previousConnections = NeighbourCount_Sorted[0][1]  # Holds the number of connections of previous user
+    rank = 1  # rank of 1 is the highest rank
+
+    for i in range(G.order()):  # hard-coding the number of users here
+        # get the nid at the {i}th position
+        nid = NeighbourCount_Sorted[i][0]
+
+        if previousConnections == NeighbourCount_Sorted[i][1]:  # NeighbourCount_Sorted [i] [1] spits out connections
+            if nid not in rank_nid_distribution.keys():
+                rank_nid_distribution[nid] = rank
+        if previousConnections > NeighbourCount_Sorted[i][1]:
+            previousConnections = NeighbourCount_Sorted[i][1]
+            if nid not in rank_nid_distribution.keys():
+                rank = rank + 1
+                rank_nid_distribution[nid] = rank
+
+    for nid in G.nodes:
+        Neighbor_count = len(list(G.neighbors(nid)))
+        nid_rank = rank_nid_distribution[nid]
+        total_read_weight = computeReadWeight(nid_rank)
+        nid_r_weight = int(total_read_weight / Neighbor_count) + 1
+        # nid_r_weight = 1
+        writeWeight = nid_r_weight * 10
+        G.nodes[nid]["write"] = writeWeight
+
+        for neighbor_id in G.neighbors(nid):
+
+            G.add_weighted_edges_from([(nid, neighbor_id, nid_r_weight)])
+
+    return G
+
+
+def nx_to_dict(G):
+    m_dict = defaultdict(lambda: {})
+    i = 0
+    for n, nbrs in G.adj.items():
+        m_dict[n]["write"] = G.nodes[n]["write"]
+        dict_nebr = defaultdict()
+        for nbr, eattr in nbrs.items():
+            wt = eattr['weight']
+            dict_nebr[nbr] = wt
+        m_dict[n]["neighbors"] = dict_nebr
+        i += 1
+    return m_dict
+
+
+def spar_inter_server_cost(dict_replicas):
+    cost = 0
+    for node_id, servers in dict_replicas.items():
+        cost += len(servers)
+
+    return cost
+
+
+def spar_inter_server_traffic(G_dict, G_servers, G_replica):
+    cost = 0
+    for u in G_dict:
+        for v in G_dict[u]["neighbors"]:
+            u_orign_partition = G_servers[u]
+            v_orign_partition = G_servers[v]
+            if u_orign_partition != v_orign_partition:
+                if u_orign_partition in G_replica[v] and v_orign_partition in G_replica[u]:
+                    cost += 0
+                else:
+                    cost += int(G_dict[u]["neighbors"][v])
+
+    return cost / 2
+
+
+def rp_inter_server_traffic(G_dict, G_servers):
+    cost = 0
+    for u in G_dict:
+        for v in G_dict[u]["neighbors"]:
+            u_orign_partition = G_servers[u]
+            v_orign_partition = G_servers[v]
+            if u_orign_partition != v_orign_partition:
+                cost += int(G_dict[u]["neighbors"][v])
+
+    return cost / 2
 
