@@ -173,12 +173,22 @@ def spar_inter_server_traffic(G_dict, G_servers, G_replica):
             u_orign_partition = G_servers[u]
             v_orign_partition = G_servers[v]
             if u_orign_partition != v_orign_partition:
-                if u_orign_partition in G_replica[v] and v_orign_partition in G_replica[u]:
-                    cost += 0
-                else:
-                    cost += int(G_dict[u]["neighbors"][v])
+                if u_orign_partition not in G_replica[v]:
+                    cost += int(G_dict[u]["neighbors"][v])/2
 
-    return cost / 2
+    return cost
+
+
+def metis_inter_server_traffic(G_dict, G_servers):
+    cost = 0
+    for u in G_dict:
+        for v in G_dict[u]["neighbors"]:
+            u_orign_partition = G_servers[u]
+            v_orign_partition = G_servers[v]
+            if u_orign_partition != v_orign_partition:
+                cost += int(G_dict[u]["neighbors"][v]) / 2
+
+    return cost
 
 
 def rp_inter_server_traffic(G_dict, G_servers):
@@ -188,7 +198,35 @@ def rp_inter_server_traffic(G_dict, G_servers):
             u_orign_partition = G_servers[u]
             v_orign_partition = G_servers[v]
             if u_orign_partition != v_orign_partition:
-                cost += int(G_dict[u]["neighbors"][v])
+                cost += int(G_dict[u]["neighbors"][v]) / 2
 
-    return cost / 2
+    return cost
+
+
+def metis_sr_inter_server_traffic(G_dict, G_servers, G_replica):
+    cost = 0
+    for u in G_dict:
+        for v in G_dict[u]["neighbors"]:
+            u_orign_partition = G_servers[u]
+            v_orign_partition = G_servers[v]
+            if u_orign_partition != v_orign_partition:
+                if u_orign_partition not in G_replica[v]:
+                    cost += int(G_dict[u]["neighbors"][v])/2
+
+    return cost
+
+
+def read_servers(nb_partition):
+    servers = defaultdict(lambda: -1)
+    file1 = open('../test.txt.part.'+str(nb_partition), 'r')
+    Lines = file1.readlines()
+    node_id = 0
+
+    for line in Lines:
+        server_id = int(line.strip())
+        servers[node_id] = server_id
+        node_id += 1
+
+    return servers
+
 

@@ -17,8 +17,6 @@ G_0 = Utils.to_undirected(G_0)
 G_dict = Utils.nx_to_dict(G_0)
 
 
-
-
 def random_partition(G_dict, nb_partition=2):
     servers = defaultdict(lambda: -1)
     for u in G_dict:
@@ -43,12 +41,11 @@ def selective_replica(G_dict, G_servers, nb_partition=2):
     return G_replica_0
 
 
-nb_partition_max = 128
+for nb_partition_max in [4, 8, 16, 32, 64, 128, 256]:
+    G_servers = random_partition(G_dict, nb_partition=nb_partition_max)
+    cost_RP_traffic = Utils.rp_inter_server_traffic(G_dict, G_servers)
 
-G_servers = random_partition(G_dict, nb_partition=nb_partition_max)
-
-cost_RP_traffic = Utils.rp_inter_server_traffic(G_dict, G_servers)
-
-print("cost_RP_traffic=", cost_RP_traffic)
+    print("\n"+str(nb_partition_max))
+    print("cost_RP_traffic=", cost_RP_traffic)
 
 
